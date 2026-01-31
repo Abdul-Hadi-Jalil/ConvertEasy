@@ -13,8 +13,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  PlatformFile? _selectedFile;
+  bool _isDownloadReady = false;
+  int _currentStep = 1;
+  String? formatSelected;
   Uint8List? _pdfBytes; // Store PDF after conversion
+  PlatformFile? _selectedFile;
 
   Future<void> pickFile() async {
     final result = await FilePicker.platform.pickFiles();
@@ -128,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         SizedBox(height: 30),
 
+                        // upload, convert, download
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
@@ -208,68 +212,214 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         SizedBox(height: 40),
 
-                        // file upload section
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(15),
-                            border: Border.all(
-                              color: Color(0xFFCBD5E1), // Softer border color
-                              style: BorderStyle.solid,
-                              width: 2,
+                        if (_currentStep == 3) ...[
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: _isDownloadReady
+                                  ? Color(0xFFF0FDF4)
+                                  : Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: _isDownloadReady
+                                    ? Color(0xFFBBF7D0)
+                                    : Color(0xFFCBD5E1),
+                                width: 2,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(30),
+                              child: Column(
+                                children: [
+                                  // Show loading first
+                                  if (!_isDownloadReady) ...[
+                                    CircularProgressIndicator(
+                                      color: Color(0xFF3B82F6),
+                                    ),
+                                    SizedBox(height: 20),
+                                    Text(
+                                      'Preparing your file...',
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                                    Text(
+                                      'Please wait a moment',
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ] else ...[
+                                    // Show success after 3 seconds
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 58,
+                                      color: const Color.fromARGB(
+                                        255,
+                                        92,
+                                        215,
+                                        96,
+                                      ),
+                                    ),
+
+                                    SizedBox(height: 20),
+
+                                    const Text(
+                                      'Conversion Complete!',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    Text(
+                                      "Your file has been successfully converted and is ready for download.",
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(30),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.cloud_upload,
-                                  size: 64,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  "Drag and Drop your files here",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF1E293B),
+                        ]
+                        // file upload section
+                        else if (_currentStep == 1) ...[
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: Color(0xFFCBD5E1), // Softer border color
+                                style: BorderStyle.solid,
+                                width: 2,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(30),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.cloud_upload,
+                                    size: 64,
+                                    color: Color(0xFF94A3B8),
                                   ),
-                                ),
-                                Text(
-                                  "or click to browse. Supports PDF, DOC",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                SizedBox(height: 30),
-                                ElevatedButton(
-                                  onPressed: pickFile,
-                                  style: ElevatedButton.styleFrom(
-                                    fixedSize: Size(170, 30),
-                                    backgroundColor: Color(0xFF3B82F6),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "Drag and Drop your files here",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF1E293B),
                                     ),
                                   ),
-                                  child: Row(
-                                    spacing: 8,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.folder_open, size: 20),
-                                      Text("Browse files"),
-                                    ],
+                                  Text(
+                                    "or click to browse. Supports PDF, DOC",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF64748B),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(height: 30),
+                                  ElevatedButton(
+                                    onPressed: pickFile,
+                                    style: ElevatedButton.styleFrom(
+                                      fixedSize: Size(170, 30),
+                                      backgroundColor: Color(0xFF3B82F6),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      spacing: 8,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.folder_open, size: 20),
+                                        Text("Browse files"),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                        ]
+                        // extention select to which file to be converted
+                        else if (_currentStep == 2) ...[
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: Color(0xFFCBD5E1), // Softer border color
+                                style: BorderStyle.solid,
+                                width: 2,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                spacing: 14,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Converted to',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                    ),
+                                  ),
 
+                                  // file conversions to choose
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        formatSelected = "pdf";
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 95,
+                                      height: 45,
+                                      decoration: BoxDecoration(
+                                        border: BoxBorder.all(
+                                          color: formatSelected == 'pdf'
+                                              ? Color(0xFF3B82F6)
+                                              : Colors.grey,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: formatSelected == 'pdf'
+                                            ? Color(0xFF3B82F6).withOpacity(0.1)
+                                            : Colors.white,
+                                        shape: BoxShape.rectangle,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        spacing: 8,
+                                        children: [
+                                          Icon(
+                                            Icons.file_open_rounded,
+                                            color: formatSelected == 'pdf'
+                                                ? Color(0xFF3B82F6)
+                                                : Colors.grey,
+                                          ),
+                                          Text(
+                                            'PDF',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: formatSelected == 'pdf'
+                                                  ? Color(0xFF3B82F6)
+                                                  : Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                         // Show selected file preview
                         if (_selectedFile != null) ...[
                           SizedBox(height: 16),
@@ -329,21 +479,159 @@ class _HomeScreenState extends State<HomeScreen> {
                         SizedBox(height: 30),
 
                         // convert button
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF3B82F6),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              vertical: 16,
-                              horizontal: 30,
+                        if (_currentStep == 1) ...[
+                          ElevatedButton(
+                            onPressed: () {
+                              if (_selectedFile != null) {
+                                setState(() {
+                                  _currentStep = 2;
+                                });
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF3B82F6),
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                vertical: 20,
+                                horizontal: 30,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                            child: Text(
+                              "Convert",
+                              style: TextStyle(fontSize: 16),
                             ),
                           ),
-                          child: Text("Convert"),
-                        ),
+                        ]
+                        // back and start conversion button
+                        else if (_currentStep == 2) ...[
+                          Row(
+                            spacing: 12,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _currentStep = 1;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 20,
+                                    horizontal: 30,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    side: BorderSide(
+                                      style: BorderStyle.solid,
+                                      color: Colors.grey,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Back",
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+
+                              ElevatedButton(
+                                onPressed: () {
+                                  // When moving to step 3
+                                  setState(() {
+                                    _currentStep = 3;
+                                    _isDownloadReady = false;
+                                  });
+
+                                  // After 3 seconds, show success
+                                  Future.delayed(Duration(seconds: 3), () {
+                                    setState(() {
+                                      _isDownloadReady = true;
+                                    });
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFF3B82F6),
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 20,
+                                    horizontal: 30,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Start Conversion",
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ]
+                        // download and back button
+                        else if (_currentStep == 3) ...[
+                          Row(
+                            spacing: 12,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _currentStep = 1;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 20,
+                                    horizontal: 30,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    side: BorderSide(
+                                      style: BorderStyle.solid,
+                                      color: Colors.grey,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Back",
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _currentStep = 3;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFF3B82F6),
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 20,
+                                    horizontal: 30,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Download",
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
