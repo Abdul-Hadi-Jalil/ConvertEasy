@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +13,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isDownloadReady = false;
-  int _currentStep = 1;
   String? formatSelected;
+
+  int _currentStep = 1;
+  bool _isDownloadReady = false;
   Uint8List? _pdfBytes; // Store PDF after conversion
   PlatformFile? _selectedFile;
 
@@ -28,14 +29,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 1. Convert only (no download)
   Future<void> convertFile() async {
     if (_selectedFile == null) return;
 
-    final url = Uri.parse('http://localhost:8000/word_to_pdf');
+    final url = Uri.parse('http://127.0.0.1:8000/word_to_pdf');
 
     var request = http.MultipartRequest('POST', url);
-    final fileBytes = await File(_selectedFile!.path!).readAsBytes();
+
+    Uint8List fileBytes;
+    fileBytes = _selectedFile!.bytes!;
 
     request.files.add(
       http.MultipartFile.fromBytes(
@@ -279,64 +281,71 @@ class _HomeScreenState extends State<HomeScreen> {
                         ]
                         // file upload section
                         else if (_currentStep == 1) ...[
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: Color(0xFFCBD5E1), // Softer border color
-                                style: BorderStyle.solid,
-                                width: 2,
+                          InkWell(
+                            onTap: pickFile,
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(
+                                  color: Color(
+                                    0xFFCBD5E1,
+                                  ), // Softer border color
+                                  style: BorderStyle.solid,
+                                  width: 2,
+                                ),
                               ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(30),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.cloud_upload,
-                                    size: 64,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    "Drag and Drop your files here",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
-                                      color: Color(0xFF1E293B),
+                              child: Padding(
+                                padding: const EdgeInsets.all(30),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.cloud_upload,
+                                      size: 64,
+                                      color: Color(0xFF94A3B8),
                                     ),
-                                  ),
-                                  Text(
-                                    "or click to browse. Supports PDF, DOC",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w400,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                  ),
-                                  SizedBox(height: 30),
-                                  ElevatedButton(
-                                    onPressed: pickFile,
-                                    style: ElevatedButton.styleFrom(
-                                      fixedSize: Size(170, 30),
-                                      backgroundColor: Color(0xFF3B82F6),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      "Drag and Drop your files here",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF1E293B),
                                       ),
                                     ),
-                                    child: Row(
-                                      spacing: 8,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.folder_open, size: 20),
-                                        Text("Browse files"),
-                                      ],
+                                    Text(
+                                      "or click to browse. Supports PDF, DOC",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(height: 30),
+                                    ElevatedButton(
+                                      onPressed: pickFile,
+                                      style: ElevatedButton.styleFrom(
+                                        fixedSize: Size(170, 30),
+                                        backgroundColor: Color(0xFF3B82F6),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        spacing: 8,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.folder_open, size: 20),
+                                          Text("Browse files"),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -541,6 +550,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               ElevatedButton(
                                 onPressed: () {
+                                  // send file to backend for conversion
+                                  convertFile();
+
                                   // When moving to step 3
                                   setState(() {
                                     _currentStep = 3;
@@ -582,7 +594,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ElevatedButton(
                                 onPressed: () {
                                   setState(() {
-                                    _currentStep = 1;
+                                    _currentStep = 2;
                                   });
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -609,6 +621,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               ElevatedButton(
                                 onPressed: () {
+                                  // download the file
+                                  downloadPdf();
+
                                   setState(() {
                                     _currentStep = 3;
                                   });
